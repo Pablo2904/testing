@@ -166,11 +166,14 @@ class WC_REST_Emerch_Products_Controller extends WC_REST_Legacy_Products_Control
 			$data['grouped_products'] = $object->get_children();
 		}
 
-		$data = $this->add_additional_fields_to_object( $data, $request);
+		$data = $this->add_additional_fields_to_object( $data, $request );
+
 		$data = apply_filters('emerch_filter_product_item', $data);
-		$data = $this->filter_response_by_context( $data, $context);
+
+		$data = $this->filter_response_by_context( $data, $context );
+
 		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $object, $request ));
+		$response->add_links( $this->prepare_links( $object, $request ) );
 
 		/**
 		 * Filter the data for a response.
@@ -311,13 +314,6 @@ class WC_REST_Emerch_Products_Controller extends WC_REST_Legacy_Products_Control
 			);
 		}
 
-
-
-
-
-
-
-
 		// Price filter.
 		if ( ! empty( $request['min_price'] ) || ! empty( $request['max_price'] ) ) {
 			$args['meta_query'] = $this->add_meta_query( $args, wc_get_min_max_price_meta_query( $request ) );  // WPCS: slow query ok.
@@ -334,7 +330,9 @@ class WC_REST_Emerch_Products_Controller extends WC_REST_Legacy_Products_Control
 		}
 
 
-
+        if ( is_string( $request['meta_key'] ))  {
+            $args['meta_key'] = $request['meta_key'];
+        }
 
 		// Filter by on sale products.
 		if ( is_bool( $request['on_sale'] ) ) {
@@ -354,45 +352,6 @@ class WC_REST_Emerch_Products_Controller extends WC_REST_Legacy_Products_Control
 			$args['post_type'] = $this->post_type;
 		}
 
-        //todo - ONLY ZEROS CHECK
-        $requestTerm = get_term($request[ 'category' ][ 0 ]);
-        global $wpdb;
-        $sql = str_replace('{term_slug}', $requestTerm->slug,
-            "select * FROM wp_postmeta WHERE post_id  AND meta_key LIKE '_reorder_term%{term_slug}';");
-        //todo and meta_value !== "0"
-        $results = $wpdb->get_results($sql);
-        if ( is_array($results) && ! empty($results) ) {
-            $onlyZeros = true;
-            foreach ($results as $postMetaItem) {
-                if ( '0' !== $postMetaItem->meta_value ) {
-                    $onlyZeros = false;
-                }
-            }
-        }
-
-        if ( true === $onlyZeros ) {
-        //musze usunąć sortoweanie _reorder_term bo sa same zera
-            if ( strpos($request[ 'meta_key' ], '_reorder_term') === 0 ) {
-
-                $args[ 'orderby' ] = 'menu_order';
-                unset($request[ 'meta_key' ]);
-                unset($args[ 'orderby' ]);
-            }
-        }
-
-        //var_dump($re)
-
-        if ( is_string($request[ 'meta_key' ]) ) {
-            $args[ 'meta_key' ] = $request[ 'meta_key' ];
-            $args[ 'orderby' ] = 'meta_value_num';
-            $args[ 'order' ] = 'DESC';
-
-        }
-
-        //unset($request[ 'key' ]);
-
-
-        //var_dump($args);die;
 		return $args;
 	}
 
